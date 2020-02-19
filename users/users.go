@@ -50,6 +50,18 @@ func DeleteUser(context *gin.Context) error {
 	return nil
 }
 
+func FindUser(context *gin.Context) (*common.User, error) {
+	var userName = context.Param("userName")
+	if userName == "" {
+		return nil, fmt.Errorf("user name not found")
+	}
+	var user = common.FindUser(userName)
+	if user == nil {
+		return nil, fmt.Errorf("%s: user not found", userName)
+	}
+	return user, nil
+}
+
 /*
 Authenticate performs authentication from given http request.
 */

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -39,6 +40,15 @@ func deleteUser(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
+func findUser(context *gin.Context) {
+	var _, err = users.FindUser(context)
+	if err != nil {
+		context.JSON(400, gin.H{"message": err.Error()})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("%s: found", context.Param("userName"))})
+}
+
 func registerPoint(context *gin.Context) {
 	if err := points.RegisterPoints(context); err != nil {
 		context.JSON(400, gin.H{"message": err.Error()})
@@ -53,6 +63,7 @@ func historyOfPoints(context *gin.Context) {
 
 func goMain(args []string) int {
 	var router = gin.Default()
+	router.GET("/v1/users/:userName", findUser)
 	router.POST("/v1/users/:userName", registerUser)
 	router.PUT("/v1/users/:userName", updateKeyPhrase)
 	router.DELETE("/v1/users/:userName", deleteUser)

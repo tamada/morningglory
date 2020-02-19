@@ -72,36 +72,35 @@ func RegisterPoint(point *Point) error {
 
 func RegisterUser(userName, md5KeyPhrase string) error {
 	var ctx = context.Background()
-	var found = findUser(ctx, userName)
-	if found != nil {
-		return fmt.Errorf("%s: user found", userName)
+	var _, err = findUser(ctx, userName)
+	if err != nil {
+		return err
 	}
-	var key = datastore.IncompleteKey("User", nil)
-	var _, err = db.client.Put(ctx, key, &User{
-		Name:      userName,
+	var key = datastore.NameKey("Users", userName, nil)
+	var _, err2 = db.client.Put(ctx, key, &User{
 		KeyPhrase: md5KeyPhrase,
 	})
-	return err
+	return err2
 }
 
 func DeleteUser(userName string) error {
 	var ctx = context.Background()
-	var key = datastore.NameKey("User", userName, nil)
+	var key = datastore.NameKey("Users", userName, nil)
 	return db.client.Delete(ctx, key)
 }
 
 func UpdateKeyPhrase(userName, md5KeyPhrase string) error {
 	var ctx = context.Background()
-	var found = findUser(ctx, userName)
-	if found == nil {
-		return fmt.Errorf("%s: user not found", userName)
+	var _, err = findUser(ctx, userName)
+	if err != nil {
+		return err
 	}
-	var key = datastore.NameKey("User", userName, nil)
-	var _, err = db.client.Put(ctx, key, &User{
+	var key = datastore.NameKey("Users", userName, nil)
+	var _, err2 = db.client.Put(ctx, key, &User{
 		Name:      userName,
 		KeyPhrase: md5KeyPhrase,
 	})
-	return err
+	return err2
 }
 
 /*
@@ -109,8 +108,8 @@ Authenticate finds userName and match md5KeyPhrase.
 */
 func Authenticate(userName, md5KeyPhrase string) error {
 	var ctx = context.Background()
-	var found = findUser(ctx, userName)
-	if found == nil {
+	var found, err = findUser(ctx, userName)
+	if err != nil {
 		return fmt.Errorf("%s: user not found", userName)
 	}
 	if found.KeyPhrase != md5KeyPhrase {
@@ -119,12 +118,18 @@ func Authenticate(userName, md5KeyPhrase string) error {
 	return nil
 }
 
-func findUser(ctx context.Context, userName string) *User {
-	var key = datastore.NameKey("User", userName, nil)
+func FindUser(userName string) *User {
+	var ctx = context.Background()
+	var user, _ = findUser(ctx, userName)
+	return user
+}
+
+func findUser(ctx context.Context, userName string) (*User, error) {
+	var key = datastore.NameKey("Users", userName, nil)
 	var found = User{}
-	db.client.Get(ctx, key, &found)
-	if found.Name == "" {
-		return nil
+	var err = db.client.Get(ctx, key, &found)
+	if err != nil {
+		return nil, err
 	}
-	return &found
+	return &found, nil
 }
